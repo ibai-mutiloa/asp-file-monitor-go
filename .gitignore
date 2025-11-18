@@ -1,0 +1,21 @@
+# Go build
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Build cache
+bin/
+build/
+
+# Logs
+logs/*
+!logs/.keep
+
+# VSCode
+.vscode/
+
+# OS files
+Thumbs.db
+Desktop.ini
