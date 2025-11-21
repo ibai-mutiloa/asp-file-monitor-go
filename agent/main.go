@@ -93,14 +93,14 @@ func main() {
 			maxTimer = time.NewTimer(time.Duration(maxWait) * time.Second)
 			maxTimerCh = maxTimer.C
 			if verbose {
-				log.Printf("Max-wait timer iniciado: commit forzado en %ds", maxWait)
+				log.Printf("⏰ Max-wait timer iniciado: commit forzado en %ds", maxWait)
 			}
 		}
 	}
 
 	// Agregar watchers recursivamente
 	if err := addRecursive(watcher, watchDir); err != nil {
-		log.Fatalf("Error al añadir watchers: %v", err)
+		log.Fatalf("❌ Error al añadir watchers: %v", err)
 	}
 
 	done := make(chan struct{})
@@ -120,7 +120,7 @@ func main() {
 				if !ok {
 					return
 				}
-				log.Println("Watcher error:", err)
+				log.Println("⚠️  Watcher error:", err)
 
 			case <-commitTimer.C:
 				performCommit(state, &maxTimer, &maxTimerCh, "debounce completado")
@@ -135,7 +135,7 @@ func main() {
 					fmt.Sprintf("max-wait alcanzado (%.0fs)", elapsed.Seconds()))
 
 			case s := <-sig:
-				log.Printf("Señal %v recibida, terminando...", s)
+				log.Printf("🛑 Señal %v recibida, terminando...", s)
 				commitTimer.Stop()
 				if maxTimer != nil {
 					maxTimer.Stop()
@@ -148,7 +148,7 @@ func main() {
 	}()
 
 	<-done
-	log.Println("Agente detenido correctamente")
+	log.Println("✅ Agente detenido correctamente")
 }
 
 type agentState struct {
@@ -164,7 +164,7 @@ func handleEvent(event fsnotify.Event, watcher *fsnotify.Watcher, state *agentSt
 		if err == nil && info.IsDir() {
 			_ = addRecursive(watcher, event.Name)
 			if verbose {
-				log.Printf("Nuevo directorio añadido al watcher: %s", event.Name)
+				log.Printf("📂 Nuevo directorio añadido al watcher: %s", event.Name)
 			}
 			return
 		}
@@ -178,7 +178,7 @@ func handleEvent(event fsnotify.Event, watcher *fsnotify.Watcher, state *agentSt
 		count := len(state.changed)
 		state.mu.Unlock()
 
-		log.Printf("Cambio detectado [%d]: %s", count, filepath.Base(event.Name))
+		log.Printf("📝 Cambio detectado [%d]: %s", count, filepath.Base(event.Name))
 		scheduleCommit()
 	}
 }
@@ -201,18 +201,18 @@ func performCommit(state *agentState, maxTimer **time.Timer, maxTimerCh *<-chan 
 
 	if len(files) == 0 {
 		if verbose {
-			log.Printf("%s: sin cambios pendientes", reason)
+			log.Printf("ℹ️  %s: sin cambios pendientes", reason)
 		}
 		return
 	}
 
-	log.Printf("Commit iniciado (%s): %d archivo(s)", reason, len(files))
+	log.Printf("💾 Commit iniciado (%s): %d archivo(s)", reason, len(files))
 	start := time.Now()
 
 	if err := gitAddCommitPush(repoDir, files); err != nil {
-		log.Printf("Git error: %v", err)
+		log.Printf("❌ Git error: %v", err)
 	} else {
-		log.Printf("Commit y push completado en %.2fs", time.Since(start).Seconds())
+		log.Printf("✅ Commit y push completado en %.2fs", time.Since(start).Seconds())
 	}
 }
 
@@ -246,7 +246,7 @@ func addRecursive(w *fsnotify.Watcher, root string) error {
 				return filepath.SkipDir
 			}
 			if err := w.Add(path); err != nil && verbose {
-				log.Printf("No se pudo añadir watcher a %s: %v", path, err)
+				log.Printf("⚠️  No se pudo añadir watcher a %s: %v", path, err)
 			}
 		}
 		return nil
@@ -269,7 +269,7 @@ func gitAddCommitPush(repo string, files []string) error {
 	// Git status para verificar cambios
 	if out, err := runGit(repo, "status", "--short"); err == nil && strings.TrimSpace(out) == "" {
 		if verbose {
-			log.Println("Sin cambios staged para commit")
+			log.Println("ℹ️  Sin cambios staged para commit")
 		}
 		return nil
 	}
@@ -310,7 +310,7 @@ func runGit(repo string, args ...string) (string, error) {
 	cmd.Stderr = &buf
 
 	if verbose {
-		log.Printf("Ejecutando: git %s", strings.Join(args, " "))
+		log.Printf("🔧 Ejecutando: git %s", strings.Join(args, " "))
 	}
 
 	if err := cmd.Run(); err != nil {
